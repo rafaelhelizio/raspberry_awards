@@ -11,7 +11,7 @@
 
 ### Comandos make para a aplicação
 
-Comandos make para facilitar a inicialização da aplicação, caso necessário a limpeza do banco de dados e a criação do mesmo sem a necessidade de reiniciar a aplicação, assim como rodar os testes.
+Comandos make para facilitar a inicialização da aplicação e execução de testes
 
 #### Inicializa a aplicação localmente
 
