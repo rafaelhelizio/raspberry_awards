@@ -20,11 +20,3 @@ Comandos make para facilitar a inicialização da aplicação, caso necessário 
 #### Testa a aplicação
 
     make test
-
-#### Apaga o banco de dados
-
-    make db --clear
-
-#### Popula o banco de dados
-
-    make db --populate
