@@ -1,54 +1,68 @@
-from sqlalchemy import func
-from app.db.database import SessionLocal
-from models import Movie
+from app.db.database import Session
+from app.models import Movie
+from app.schema.movies import Winners, WinnersResponse
 
-def get_movies_interval():
+def get_movies_interval() -> WinnersResponse:
+    with Session() as session:
+        result = session.query(Movie).all()
 
-    db = SessionLocal()
+        min_movie = None
+        max_movie = None
 
-    producers = (
-        db.query(Movie.producers)
-        .filter(Movie.winner)
-        .group_by(Movie.producers)
-        .having(func.count(Movie.year) > 1)
-        .all()
+        for r in result:
+            data_set = movie_to_winners(r)
+            if r.min:
+                min_movie = data_set
+            else:
+                max_movie = data_set
+
+        if min_movie is None:
+            min_movie = {"producer": "Unknown", "interval": 0, "previousWin": 0, "followingWin": 0}
+
+        if max_movie is None:
+            max_movie = {"producer": "Unknown", "interval": 0, "previousWin": 0, "followingWin": 0}
+
+        response = WinnersResponse(min=min_movie, max=max_movie)
+
+        return response
+
+def movie_to_winners(movie: Movie) -> Winners:
+    return Winners(
+        producer=movie.producer,
+        interval=movie.interval,
+        previousWin=movie.previousWin,
+        followingWin=movie.followingWin,
     )
 
-    results = {"min": [], "max": []}
+def insert_movies_database(max_min_winners):
+    try:
+        db = Session()
 
-    for producer in producers:
-        producer_name = producer[0]
-        intervals = (
-            db.query(Movie.year)
-            .filter(Movie.winner, Movie.producers == producer_name)
-            .order_by(Movie.year)
-            .all()
-        )
+        all_movies = db.query(Movie).all()
 
-        min_interval = None
-        max_interval = None
-        previous_win = None
+        for key in max_min_winners:
+            rec = True
+            rec_data = {
+                        "producer": max_min_winners[key]['producer'],
+                        "interval": max_min_winners[key]['interval'],
+                        "previousWin": max_min_winners[key]['previousWin'],
+                        "followingWin": max_min_winners[key]['followingWin'],
+                        "min": True if key == 'min' else False,
+                    }
 
-        for year in intervals:
-            if previous_win is None:
-                previous_win = year[0]
-            else:
-                interval = year[0] - previous_win
-                if max_interval is None or interval > max_interval:
-                    max_interval = interval
-                if min_interval is None or interval < min_interval:
-                    min_interval = interval
-                previous_win = year[0]
+            if len(all_movies) >1:
+                for movie in all_movies:
+                    if movie.min and key == 'min' and max_min_winners[key]['interval'] >= movie.interval:
+                        rec = False
+                    if movie.min == False and key == 'max' and max_min_winners[key]['interval'] <= movie.interval:
+                        rec = False
+            if rec:
+                movie = Movie(**rec_data)
+                db.add(movie)
 
-        if min_interval is not None and max_interval is not None:
-            producer_info = {
-                "producer": producer_name,
-                "interval": min_interval if min_interval == max_interval else max_interval,
-                "previousWin": previous_win - max_interval,
-                "followingWin": previous_win,
-            }
-            results["min" if min_interval == max_interval else "max"].append(producer_info)
+        db.commit()
+        db.close()
 
-    db.close()
-
-    return results
+        return True
+    except Exception as e:
+        return {"error": str(e)}

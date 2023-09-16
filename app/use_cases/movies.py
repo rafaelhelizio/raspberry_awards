@@ -1,15 +1,11 @@
 # usecases.py
 
-import io
+import re
 import pandas as pd
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, Session
-from models import Movie
-from db.database import DATABASE_URL
-from repositories import movies
+import io
+from app.repositories import movies
+from app.schema.movies import WinnersResponse
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_intervals():
     try:
@@ -18,23 +14,54 @@ def get_intervals():
         return {"error": str(e)}
 
 
-def upload_csv(session: Session, file_contents: bytes):
-    try:
-        df = pd.read_csv(io.StringIO(file_contents.decode("utf-8")), delimiter=";")
 
+
+def upload_csv(file_contents: bytes):
+    try:
+    
+        df = pd.read_csv(io.StringIO(file_contents), delimiter=";")
+
+        producers_count = {}
+        print("BACKGROUND")
         for _, row in df.iterrows():
             is_winner = row["winner"] == "yes" if "winner" in row else False
-            movie_data = Movie(
-                year=row["year"],
-                title=row["title"],
-                studios=row["studios"],
-                producers=row["producers"],
-                winner=is_winner,
-            )
-            session.add(movie_data)
-        session.commit()
+            if is_winner:
+                year = row["year"]
+                producers = row["producers"]
+                key = re.split(r',| and ', producers)
+                
+                for k in key:
+                    if k not in producers_count:
+                        producers_count[k] = {"years": [year]}
+                    else:
+                        producers_count[k]["years"].append(year)
 
-        return {"message": "Arquivo CSV importado com sucesso."}
+        producers_winners = []
+        for key, value in producers_count.items():
+            if len(value["years"]) > 1:
+                producer = key
+                years = value["years"]
+                first_win = min(years)
+                last_win = max(years)
+                producers_winners.append({'producer': producer, 'interval' : (last_win - first_win), 'previousWin': first_win, 'followingWin': last_win})
+
+        max_min_winners = {}
+        min_interval = float('inf')
+        max_interval = 0
+
+        for producer in producers_winners:
+            if producer['interval'] < min_interval:
+                min_interval = producer['interval']
+                max_min_winners['min'] = producer
+            if producer['interval'] > max_interval:
+                max_interval = producer['interval']
+                max_min_winners['max'] = producer
+
+        movies.insert_movies_database(max_min_winners)
+
+        return max_min_winners
 
     except Exception as e:
         return {"error": str(e)}
+    
+
