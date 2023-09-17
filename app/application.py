@@ -9,22 +9,20 @@ from app.use_cases.movies import upload_csv
 _env = get_environment()
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-csv_file = os.path.join(base_dir, "db", "data", "movielist.csv")
+csv_file = os.path.join(base_dir, "csv", "movielist.csv")
 
-def create_app():
-    app = FastAPI(title=_env.APPLICATION_NAME)
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app = FastAPI(title=_env.APPLICATION_NAME)
 
-    file = open(csv_file)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    upload_csv(file.read())
-    app.include_router(movies) 
+file = open(csv_file)
 
-    return app
+upload_csv(file.read())
+app.include_router(movies) 

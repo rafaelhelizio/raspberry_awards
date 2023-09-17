@@ -13,10 +13,14 @@
 
 Comandos make para facilitar a inicialização da aplicação e execução de testes
 
-#### Inicializa a aplicação localmente
+#### Inicializa a aplicação
 
     make run
 
 #### Testa a aplicação
 
     make test
+
+#### Help do arquivo Make
+
+    make help

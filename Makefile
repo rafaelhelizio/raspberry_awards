@@ -27,14 +27,15 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
-# Build docker image
-build:
-	docker build -t fastapiexample --no-cache --build-arg GITLAB_PACKAGES=${GITLAB_PACKAGES} .
 
+## Run Application
+run: app/
+    uvicorn application:app --host 0.0.0.0 --port 9000
 
+## Clean cache files
 clean:
 	rm -rf $(CONDA_ENV) __pycache__
 
 ## Run tests
 test:
-	pytest -v
+	pytest -v tests
