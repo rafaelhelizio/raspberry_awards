@@ -1,29 +1,31 @@
-from threading import Thread
-from fastapi import APIRouter, Response, UploadFile, HTTPException
+from fastapi import APIRouter, Response, UploadFile
+from fastapi.responses import JSONResponse
 from app.use_cases.movies import get_intervals, upload_csv
-from app.schema.movies import WinnersResponse
+from app.schema.movies import ResponseErrorFileSchema, ResponseFileSchema, WinnersResponse
 
 app = APIRouter()
 
-@app.post("/upload/")
+@app.post("/upload/", response_model=ResponseFileSchema, responses={422: {"model": ResponseErrorFileSchema}})
 async def upload_csv_endpoint(file: UploadFile):
     try:
         if file.content_type != "text/csv":
-            raise HTTPException(status_code=400, detail="Only CSV files!")
-
-        contents = await file.read()
-        result = Thread(target=upload_csv, args=(contents,), daemon=False, name='ImportCSV')
-
-        return Response(status_code=200) if result else HTTPException(status_code=500, detail="Internal error!")
+            return JSONResponse(status_code=422, content={"message": "Only CSV files"})
+        
+        file_content = await file.read()
+        
+        result = upload_csv(file_content)
+        if result:
+            return JSONResponse(status_code=200, content={"message": "Upload completed successfully"})
+        else:
+            return JSONResponse(status_code=500, content={"message": "Error when uploading"})
 
     except Exception as e:
         return {"error": str(e)}
 
 
-@app.get("/winners/intervals/", response_model=WinnersResponse)
+@app.get("/winners/", response_model=WinnersResponse)
 async def get_intervals_endpoint():
     try:
-        result = get_intervals()
-        return result
+        return get_intervals()
     except Exception as e:
         return {"error": str(e)}

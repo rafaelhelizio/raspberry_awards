@@ -13,9 +13,14 @@
 
 Comandos make para facilitar a inicialização da aplicação e execução de testes
 
+#### Setup da aplicação
+
+    make setup
+
 #### Inicializa a aplicação
 
     make run
+
 
 #### Testa a aplicação
 
@@ -24,3 +29,7 @@ Comandos make para facilitar a inicialização da aplicação e execução de te
 #### Help do arquivo Make
 
     make help
+
+#### Documentação (swagger)
+
+    http://localhost:9000/docs

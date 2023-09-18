@@ -1,11 +1,10 @@
 # usecases.py
 
+import logging
 import re
 import pandas as pd
 import io
 from app.repositories import movies
-from app.schema.movies import WinnersResponse
-
 
 def get_intervals():
     try:
@@ -13,21 +12,20 @@ def get_intervals():
     except Exception as e:
         return {"error": str(e)}
 
-
-
-
 def upload_csv(file_contents: bytes):
     try:
     
-        df = pd.read_csv(io.StringIO(file_contents), delimiter=";")
+        df = pd.read_csv(io.StringIO(file_contents.decode()), delimiter=";")
 
         producers_count = {}
-        print("BACKGROUND")
+
+        logging.info("UPLOAD CSV - START")
+
         for _, row in df.iterrows():
-            is_winner = row["winner"] == "yes" if "winner" in row else False
+            is_winner =  True if row["winner"] == "yes" and "winner" in row else False
             if is_winner:
                 year = row["year"]
-                producers = row["producers"]
+                producers = row["producers"].strip()
                 key = re.split(r',| and ', producers)
                 
                 for k in key:
@@ -43,10 +41,11 @@ def upload_csv(file_contents: bytes):
                 years = value["years"]
                 first_win = min(years)
                 last_win = max(years)
-                producers_winners.append({'producer': producer, 'interval' : (last_win - first_win), 'previousWin': first_win, 'followingWin': last_win})
+                producers_winners.append({'producer': producer, 'interval' : (last_win - first_win), 
+                                          'previousWin': first_win, 'followingWin': last_win})
 
         max_min_winners = {}
-        min_interval = float('inf')
+        min_interval = 9999
         max_interval = 0
 
         for producer in producers_winners:
@@ -57,11 +56,14 @@ def upload_csv(file_contents: bytes):
                 max_interval = producer['interval']
                 max_min_winners['max'] = producer
 
-        movies.insert_movies_database(max_min_winners)
+        if len(max_min_winners) > 0:
+            movies.insert_movies_database(max_min_winners)
+        else:
+            logging.info("UPLOAD CSV - NO RESULTS")    
+
+        logging.info("UPLOAD CSV - END")
 
         return max_min_winners
 
     except Exception as e:
         return {"error": str(e)}
-    
-

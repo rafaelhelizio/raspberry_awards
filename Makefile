@@ -1,5 +1,7 @@
 include ./.env
 
+PIP = ./venv/bin/pip
+
 # COLORS
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
@@ -28,14 +30,28 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 
-## Run Application
-run: app/
-    uvicorn application:app --host 0.0.0.0 --port 9000
+.PHONY: run test install venv
 
-## Clean cache files
-clean:
-	rm -rf $(CONDA_ENV) __pycache__
+venv:
+	python3 -m venv venv
+
+## Install Application
+setup: venv
+	venv/bin/pip install -r requirements.txt
+
+## Run Application and Install Application
+setup-run: setup
+	venv/bin/uvicorn main:app --host 0.0.0.0 --port 9000
+
+## Run Application
+run: 
+	venv/bin/uvicorn main:app --host 0.0.0.0 --port 9000
 
 ## Run tests
 test:
-	pytest -v tests
+	 venv/bin/pytest
+
+
+## Clean temp files
+clean:
+	rm -rf __pycache__ && rm -rf .pytest_cache && rm -rf venv && rm -rf raspberry_awards.log

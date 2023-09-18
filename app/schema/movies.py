@@ -1,5 +1,4 @@
 
-from typing import Dict
 from pydantic import BaseModel, Field
 
 class Winners(BaseModel):
@@ -11,3 +10,10 @@ class Winners(BaseModel):
 class WinnersResponse(BaseModel):
     min: Winners
     max: Winners
+
+
+class ResponseFileSchema(BaseModel):
+    message: str = Field(default="Upload completed successfully")
+
+class ResponseErrorFileSchema(BaseModel):
+    message: str = Field(default="Only CSV File")

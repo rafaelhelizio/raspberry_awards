@@ -36,12 +36,16 @@ def movie_to_winners(movie: Movie) -> Winners:
 
 def insert_movies_database(max_min_winners):
     try:
+        
         db = Session()
 
         all_movies = db.query(Movie).all()
+        
+        if len(all_movies) > 0:
+            db.query(Movie).delete()
+            db.commit()
 
         for key in max_min_winners:
-            rec = True
             rec_data = {
                         "producer": max_min_winners[key]['producer'],
                         "interval": max_min_winners[key]['interval'],
@@ -49,20 +53,38 @@ def insert_movies_database(max_min_winners):
                         "followingWin": max_min_winners[key]['followingWin'],
                         "min": True if key == 'min' else False,
                     }
-
-            if len(all_movies) >1:
+            awards = Movie(**rec_data)
+            if len(all_movies) > 0:            
                 for movie in all_movies:
-                    if movie.min and key == 'min' and max_min_winners[key]['interval'] >= movie.interval:
-                        rec = False
-                    if movie.min == False and key == 'max' and max_min_winners[key]['interval'] <= movie.interval:
-                        rec = False
-            if rec:
-                movie = Movie(**rec_data)
-                db.add(movie)
+                    if movie.min == True and key == 'min' and max_min_winners[key]['interval'] > movie.interval:
+                        awards.producer = movie.producer
+                        awards.interval = movie.interval
+                        awards.previousWin = movie.previousWin
+                        awards.followingWin = movie.followingWin
+                        awards.min = movie.min
+                    if movie.min == False and key == 'max' and max_min_winners[key]['interval'] < movie.interval:
+                        awards.producer = movie.producer
+                        awards.interval = movie.interval
+                        awards.previousWin = movie.previousWin
+                        awards.followingWin = movie.followingWin
+                        awards.min = movie.min
 
-        db.commit()
+            db.add(awards)
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            return False
+        
+
+        all_movies = db.query(Movie).all()
+        movies = all_movies
+
         db.close()
+
+
 
         return True
     except Exception as e:
+        db.rollback()
         return {"error": str(e)}
