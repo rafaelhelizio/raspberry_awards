@@ -30,7 +30,7 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 
-.PHONY: run test install venv
+.PHONY: run test setup venv
 
 venv:
 	python3 -m venv venv
