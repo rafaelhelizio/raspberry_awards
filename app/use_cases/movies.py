@@ -27,7 +27,8 @@ def upload_csv(file_contents: bytes):
                 year = row["year"]
                 producers = row["producers"].strip()
                 key = re.split(r',| and ', producers)
-                
+                key = list(map(lambda x: x.strip(), key)) 
+
                 for k in key:
                     if k not in producers_count:
                         producers_count[k] = {"years": [year]}
