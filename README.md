@@ -33,3 +33,7 @@ Comandos make para facilitar a inicialização da aplicação e execução de te
 #### Documentação (swagger)
 
     http://localhost:9000/docs
+
+#### Arquivo csv que popula o banco ao iniciar a aplicação
+
+    app/csv/movielist.csv
