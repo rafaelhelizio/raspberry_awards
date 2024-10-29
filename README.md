@@ -3,7 +3,6 @@
 
   
 
-- Este projeto consiste em um teste para a TEXO IT
 
 - É uma API RESTful que possibilitar a leitura da lista de indicados e vencedores da categoria Pior Filme do Golden Raspberry Awards.
 
